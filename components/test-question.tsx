@@ -1,13 +1,17 @@
+// File: components/test-question.tsx
+
 "use client"
 
 import type { TestQuestion as TestQuestionType } from "@/lib/test-data"
 import { motion } from "framer-motion"
+import { Check } from "lucide-react"; // Import ikon centang
 
 interface TestQuestionProps {
   question: TestQuestionType
   questionNumber: number
   totalQuestions: number
-  selectedOption: number | undefined
+  // Ubah prop menjadi array number
+  selectedOptions: number[]
   onSelect: (optionIndex: number) => void
 }
 
@@ -15,7 +19,8 @@ export function TestQuestion({
   question,
   questionNumber,
   totalQuestions,
-  selectedOption,
+  // Ganti nama prop
+  selectedOptions,
   onSelect,
 }: TestQuestionProps) {
   return (
@@ -46,36 +51,46 @@ export function TestQuestion({
       {/* Question */}
       <div>
         <h2 className="text-2xl font-bold text-foreground mb-8">{question.text}</h2>
+        <p className="text-sm text-muted-foreground mb-4 -mt-4">(Select up to 2 options)</p> {/* Tambahkan instruksi */}
+
 
         {/* Options */}
         <div className="space-y-3">
-          {question.options.map((option, index) => (
-            <motion.button
-              key={option.id}
-              onClick={() => onSelect(index)}
-              className={`w-full p-4 rounded-2xl border-2 transition-all text-left ${
-                selectedOption === index
-                  ? "border-primary bg-gradient-to-r from-primary/20 to-accent/20 shadow-lg shadow-primary/20"
-                  : "border-border hover:border-primary/50 bg-card hover:bg-card/80"
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                    selectedOption === index ? "border-primary bg-primary" : "border-border group-hover:border-primary"
-                  }`}
-                >
-                  {selectedOption === index && <div className="w-2 h-2 bg-primary-foreground rounded-full" />}
+          {question.options.map((option, index) => {
+            // Periksa apakah index ini ada di dalam array selectedOptions
+            const isSelected = selectedOptions.includes(index);
+            return (
+              <motion.button
+                key={option.id}
+                onClick={() => onSelect(index)}
+                className={`w-full p-4 rounded-2xl border-2 transition-all text-left ${
+                  isSelected // Gunakan isSelected
+                    ? "border-primary bg-gradient-to-r from-primary/20 to-accent/20 shadow-lg shadow-primary/20"
+                    : "border-border hover:border-primary/50 bg-card hover:bg-card/80"
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Ganti tampilan dari radio ke checkbox style */}
+                  <div
+                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                      isSelected // Gunakan isSelected
+                        ? "border-primary bg-primary"
+                        : "border-border group-hover:border-primary"
+                    }`}
+                  >
+                    {/* Tampilkan ikon centang jika dipilih */}
+                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">{option.text}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">{option.text}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
-                </div>
-              </div>
-            </motion.button>
-          ))}
+              </motion.button>
+            )
+          })}
         </div>
       </div>
     </motion.div>

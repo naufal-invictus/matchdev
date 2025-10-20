@@ -1,3 +1,5 @@
+// File: components/test-container.tsx
+
 "use client"
 
 import { useState } from "react"
@@ -11,19 +13,49 @@ interface TestContainerProps {
   test: TestDomain
 }
 
+// Maksimum jawaban yang diizinkan per pertanyaan
+const MAX_ANSWERS = 2;
+
 export function TestContainer({ test }: TestContainerProps) {
   const router = useRouter()
   const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<{ [key: string]: number }>({})
+  // Ubah tipe state answers menjadi array number untuk setiap kunci
+  const [answers, setAnswers] = useState<{ [key: string]: number[] }>({})
 
   const question = test.questions[currentQuestion]
-  const isAnswered = answers[question.id] !== undefined
+  // Perbarui isAnswered untuk memeriksa apakah array jawaban tidak kosong
+  const isAnswered = (answers[question.id]?.length ?? 0) > 0
   const isLastQuestion = currentQuestion === test.questions.length - 1
 
   const handleSelectOption = (optionIndex: number) => {
-    setAnswers({
-      ...answers,
-      [question.id]: optionIndex,
+    setAnswers((prevAnswers) => {
+      const currentSelection = prevAnswers[question.id] || [];
+      const isSelected = currentSelection.includes(optionIndex);
+      let newSelection: number[];
+
+      if (isSelected) {
+        // Jika sudah dipilih, hapus dari array
+        newSelection = currentSelection.filter((idx) => idx !== optionIndex);
+      } else {
+        // Jika belum dipilih
+        if (currentSelection.length < MAX_ANSWERS) {
+          // Jika belum mencapai batas, tambahkan ke array
+          newSelection = [...currentSelection, optionIndex];
+        } else {
+          // Jika sudah mencapai batas, ganti jawaban terakhir (atau yang pertama, sesuai preferensi)
+          // Contoh: mengganti yang terakhir ditambahkan
+          newSelection = [...currentSelection.slice(1), optionIndex];
+          // Alternatif: mengganti yang pertama ditambahkan
+          // newSelection = [currentSelection[1], optionIndex];
+          // Alternatif: tidak lakukan apa-apa jika sudah penuh
+          // newSelection = currentSelection;
+        }
+      }
+
+      return {
+        ...prevAnswers,
+        [question.id]: newSelection,
+      }
     })
   }
 
@@ -61,7 +93,8 @@ export function TestContainer({ test }: TestContainerProps) {
               question={question}
               questionNumber={currentQuestion + 1}
               totalQuestions={test.questions.length}
-              selectedOption={answers[question.id]}
+              // Kirim array jawaban yang dipilih
+              selectedOptions={answers[question.id] || []}
               onSelect={handleSelectOption}
             />
           </div>
@@ -78,7 +111,7 @@ export function TestContainer({ test }: TestContainerProps) {
 
             <button
               onClick={handleNext}
-              disabled={!isAnswered}
+              disabled={!isAnswered} // Logika isAnswered sudah diperbarui
               className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLastQuestion ? "See Results" : "Next"}

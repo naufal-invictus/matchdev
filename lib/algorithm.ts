@@ -1,9 +1,16 @@
-// naufal-invictus/matchdev/matchdev-41eaeb3a310d9a30c1c8db682d04b81606537351/lib/algorithm.ts
+// File: lib/algorithm.ts
+
 import type { TestDomain, TestResult } from "./test-data"
 
+// Perbarui tipe UserAnswers
 export interface UserAnswers {
-  [questionId: string]: number
+  [questionId: string]: number[] // Array of selected option indices
 }
+
+// Asumsi skor maksimum per opsi tetap 5
+const MAX_SCORE_PER_OPTION = 5;
+// Karena user bisa memilih hingga 2 jawaban, skor maksimum per pertanyaan menjadi 2 * 5 = 10
+const MAX_SCORE_PER_QUESTION = MAX_SCORE_PER_OPTION * 2; // Sesuaikan jika MAX_ANSWERS di TestContainer berubah
 
 export function calculateMatches(test: TestDomain, answers: UserAnswers): TestResult[] {
   // 1. Initialize a score map for all possible results.
@@ -12,44 +19,48 @@ export function calculateMatches(test: TestDomain, answers: UserAnswers): TestRe
     categoryScores[result.id] = 0
   })
 
-  // We assume the "max" score for any question is 5.
-  // This is the benchmark for 100% compatibility.
-  const totalMaxScore = test.questions.length * 5
-  
-  // 2. Iterate through questions and aggregate scores.
+  // Hitung total skor maksimum teoritis berdasarkan jumlah pertanyaan dan skor maks per pertanyaan
+  const totalMaxScore = test.questions.length * MAX_SCORE_PER_QUESTION
+
+  // 2. Iterate through questions and aggregate scores for selected options.
   test.questions.forEach((question) => {
-    const selectedOptionIndex = answers[question.id]
-    
-    if (selectedOptionIndex !== undefined) {
-      const selectedOption = question.options[selectedOptionIndex]
-      
-      if (selectedOption && selectedOption.score) {
-        // Add scores for each category this option contributes to
-        Object.entries(selectedOption.score).forEach(([category, value]) => {
-          if (categoryScores[category] !== undefined) {
-            categoryScores[category] += value
+    const selectedOptionIndices = answers[question.id] // Ini sekarang array, bisa kosong
+
+    if (selectedOptionIndices && selectedOptionIndices.length > 0) {
+      // Iterasi melalui setiap indeks jawaban yang dipilih
+      selectedOptionIndices.forEach(selectedIndex => {
+        if (selectedIndex >= 0 && selectedIndex < question.options.length) {
+          const selectedOption = question.options[selectedIndex]
+          if (selectedOption && selectedOption.score) {
+            // Tambahkan skor untuk setiap kategori yang disumbangkan oleh opsi ini
+            Object.entries(selectedOption.score).forEach(([category, value]) => {
+              if (categoryScores[category] !== undefined) {
+                categoryScores[category] += value
+              }
+            })
           }
-        })
-      }
+        }
+      })
     }
   })
 
   // 3. Calculate compatibility percentage for each result.
   const scores = test.results.map((result) => {
     const rawScore = categoryScores[result.id]
-    
-    // Calculate percentage against the total theoretical max score.
-    const compatibility = (totalMaxScore > 0) 
-      ? Math.round((rawScore / totalMaxScore) * 100) 
+
+    // Hitung persentase terhadap total skor maksimum yang telah disesuaikan.
+    const compatibility = (totalMaxScore > 0)
+      ? Math.round((rawScore / totalMaxScore) * 100)
       : 0
 
     return {
       ...result,
-      // Ensure compatibility is always between 0 and 100.
-      compatibility: Math.min(100, Math.max(0, compatibility)), 
+      // Pastikan kompatibilitas selalu antara 0 dan 100.
+      compatibility: Math.min(100, Math.max(0, compatibility)),
     }
   })
 
-  // 4. Sort by compatibility and return top 5.
-  return scores.sort((a, b) => b.compatibility - a.compatibility).slice(0, 5)
+  // 4. Sort by compatibility and return top results (misalnya top 5).
+  // Jumlah hasil yang ditampilkan bisa disesuaikan jika perlu.
+  return scores.sort((a, b) => b.compatibility - a.compatibility)// .slice(0, 5) // Sesuaikan jika ingin menampilkan lebih/kurang dari 5
 }
