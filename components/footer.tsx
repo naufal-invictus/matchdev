@@ -31,7 +31,7 @@ export function Footer() {
           </div>
           <div>
             <h4 className="font-semibold text-foreground mb-4">Contact</h4>
-            <p className="text-muted-foreground text-sm">hello@matchdev.com</p>
+            <p className="text-muted-foreground text-sm">nawvalovsky@gmail.com</p>
           </div>
         </div>
         <div className="border-t border-border pt-8 text-center text-muted-foreground text-sm">
